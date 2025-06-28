@@ -33,7 +33,7 @@
       font-weight: bold;
     }
     table {
-      table-layout: fixed;
+      table-layout: auto;
       width: 100%;
     }
     th, td {
@@ -46,8 +46,12 @@
       background-color: #f2f2f2;
     }
     th:first-child, td:first-child {
-      width: 10%;
+      width: min-content;
       white-space: nowrap;
+    }
+
+    th:nth-child(2), td:nth-child(2) {
+      width: auto;
     }
   </style>
 </head>
@@ -161,7 +165,7 @@
         const packIdentifier = packName.match(/\((.*?)\)/)?.[1]?.toLowerCase();
         const cardKey = `${packIdentifier}-${cardDetails.split(" ")[0].padStart(3, "0")}`;
         const cardData = genericCardData.find(data => data.id === cardKey);
-        const cardImage = cardData ? `<div style='text-align:center;'><span>${cardDetails.split(" - ")[1]} (${cardDetails.split(" - ")[0]})</span><br><img src='${cardData.image}' alt='${cardData.name}' style='width:100px;height:auto;'></div>` : `<span>${cardDetails}</span>`;
+        const cardImage = cardData ? `<div style='text-align:center;'><span>${cardDetails.split(" - ")[1]}</span><br><span>#${cardDetails.split(" - ")[0]}</span><br><img src='${cardData.image}' alt='${cardData.name}' style='width:100px;height:auto;'></div>` : `<span>${cardDetails}</span>`;
 
         if (!grouped[packName]) {
           grouped[packName] = [];
@@ -171,20 +175,20 @@
 
       let groupedOutput = "";
       Object.keys(grouped).forEach((packName, index, packNames) => {
-        groupedOutput += `<tr><td colspan='2'><strong>${packName}</strong></td></tr>`;
-        groupedOutput += `<tr><td colspan='2'><div style='display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;'>${grouped[packName].join(" ")}</div></td></tr>`;
-      });
+            groupedOutput += `<tr><td colspan='2' style='border:0;'><strong>${packName}</strong></td></tr>`;
+            groupedOutput += `<tr><td colspan='2' style='border:0;'><div style='display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;'>${grouped[packName].join(" ")}</div></td></tr>`;
+        });
 
       return `<table>${groupedOutput}</table>`;
     }
 
     function logAvailableTrades(sender, receiver, genericCardData) {
       const trades = [
-        { rarity: "1 Diamond", data: intersect(receiver.wanted_cards.diamond1, sender.tradable_cards.diamond1) },
-        { rarity: "2 Diamond", data: intersect(receiver.wanted_cards.diamond2, sender.tradable_cards.diamond2) },
-        { rarity: "3 Diamond", data: intersect(receiver.wanted_cards.diamond3, sender.tradable_cards.diamond3) },
-        { rarity: "4 Diamond", data: intersect(receiver.wanted_cards.diamond4, sender.tradable_cards.diamond4) },
-        { rarity: "1 Star", data: intersect(receiver.wanted_cards.star1, sender.tradable_cards.star1) },
+        { rarity: "⬥", data: intersect(receiver.wanted_cards.diamond1, sender.tradable_cards.diamond1) },
+        { rarity: "⬥⬥", data: intersect(receiver.wanted_cards.diamond2, sender.tradable_cards.diamond2) },
+        { rarity: "⬥⬥⬥", data: intersect(receiver.wanted_cards.diamond3, sender.tradable_cards.diamond3) },
+        { rarity: "⬥⬥⬥⬥", data: intersect(receiver.wanted_cards.diamond4, sender.tradable_cards.diamond4) },
+        { rarity: "★", data: intersect(receiver.wanted_cards.star1, sender.tradable_cards.star1) },
       ];
 
       let table = `<table border="1" style="border-collapse: collapse; width: 100%;">
