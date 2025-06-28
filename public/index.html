@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PTCGP Trade Helper</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+    }
+    pre {
+      background-color: #f4f4f4;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+    button {
+      margin-top: 20px;
+      padding: 10px 20px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    input {
+      margin: 10px 0;
+      padding: 5px;
+      font-size: 16px;
+      width: 100%;
+    }
+    label {
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <h1>PTCGP Trade Helper</h1>
+  <label for="collection1">Collection ID 1:</label>
+  <input type="text" id="collection1" value="197311">
+  <br>
+  <label for="collection2">Collection ID 2:</label>
+  <input type="text" id="collection2" value="196852">
+  <br>
+  <button id="refresh">Refresh Data</button>
+  <pre id="output">Loading...</pre>
+
+  <script>
+    const CORS_PROXY = "https://corsproxy.io/?"; // Alternative CORS proxy
+
+    async function fetchRawCardData() {
+      try {
+        const response = await fetch(`${CORS_PROXY}https://raw.githubusercontent.com/chase-manning/pokemon-tcg-pocket-cards/refs/heads/main/v4.json`);
+        if (!response.ok) throw new Error("Failed to fetch card data");
+        const data = await response.json();
+        return data;
+      } catch (error) {
+        console.error("Error fetching raw card data:", error);
+        throw error;
+      }
+    }
+
+    async function fetchTradeData(id, genericData) {
+      try {
+        const response = await fetch(`${CORS_PROXY}https://ptcgp-tracker.com/collection/${id}`);
+        if (!response.ok) throw new Error(`Failed to fetch trade data for ID: ${id}`);
+        const text = await response.text();
+        const precedingString = `"ptcgp_trading":{"viewed_profile":`;
+        const nodeIndex = text.indexOf(precedingString) + precedingString.length;
+        if (nodeIndex === -1) throw new Error("Cannot find ptcgp_trading.viewed_profile");
+        const endOfResp = text.substring(nodeIndex);
+        const jsonString = extractBalancedJson(endOfResp);
+        const json = JSON.parse(jsonString);
+        enhanceWithGenericData(json, genericData);
+        return json;
+      } catch (error) {
+        console.error(`Error fetching trade data for ID ${id}:`, error);
+        throw error;
+      }
+    }
+
+    function extractBalancedJson(text) {
+      let startIndex = -1;
+      let balance = 0;
+      let result = '';
+
+      for (let i = 0; i < text.length; i++) {
+        const char = text[i];
+
+        if (char === '{') {
+          if (balance === 0) startIndex = i;
+          balance++;
+        } else if (char === '}') {
+          balance--;
+          if (balance === 0 && startIndex !== -1) {
+            result = text.substring(startIndex, i + 1);
+            break;
+          } else if (balance < 0) {
+            startIndex = -1;
+            balance = 0;
+          }
+        }
+      }
+
+      return result;
+    }
+
+    function enhanceWithGenericData(scrapedData, genericData) {
+      reformatRarityArraysObject(scrapedData.wanted_cards, genericData);
+      reformatRarityArraysObject(scrapedData.tradable_cards, genericData);
+    }
+
+    function reformatRarityArraysObject(rarityArraysObj, genericData) {
+      Object.keys(rarityArraysObj).forEach((rarityArrayKey) => {
+        rarityArraysObj[rarityArrayKey].forEach((cardString, index) => {
+          const splitCardString = cardString.split(' ');
+          const key = `${splitCardString[0].toLowerCase()}-${("00" + splitCardString[1]).slice(-3)}`;
+          rarityArraysObj[rarityArrayKey][index] = `${updateText(key)} - ${genericData.find((data) => data.id === key)?.name || "Unknown"}`;
+        });
+      });
+    }
+
+    function updateText(inputString) {
+      let returnString = inputString;
+
+      returnString = returnString.replaceAll("a1-", "Genetic Apex (A1) #");
+      returnString = returnString.replaceAll("a1a-", "Mythical Island (A1a) #");
+      returnString = returnString.replaceAll("a2-", "Space-Time Smackdown (A2) #");
+      returnString = returnString.replaceAll("a2a-", "Triumphant Light (A2a) #");
+      returnString = returnString.replaceAll("a2b-", "Shining Revelry (A2b) #");
+      returnString = returnString.replaceAll("a3-", "Celestial Guardians (A3) #");
+      returnString = returnString.replaceAll("a3a-", "Extradimensional Crisis (A3a) #");
+      returnString = returnString.replaceAll("a3b-", "Eevee Grove (A3b) #");
+      return returnString;
+    }
+
+    function logAvailableTrades(sender, receiver) {
+      let d1Trade = intersect(receiver.wanted_cards.diamond1, sender.tradable_cards.diamond1);
+      let d2Trade = intersect(receiver.wanted_cards.diamond2, sender.tradable_cards.diamond2);
+      let d3Trade = intersect(receiver.wanted_cards.diamond3, sender.tradable_cards.diamond3);
+      let d4Trade = intersect(receiver.wanted_cards.diamond4, sender.tradable_cards.diamond4);
+      let s1Trade = intersect(receiver.wanted_cards.star1, sender.tradable_cards.star1);
+
+      return (
+`${sender.user.game_name} has and ${receiver.user.game_name} needs:
+1 Diamond: ${JSON.stringify(d1Trade, undefined, 2)}
+2 Diamond: ${JSON.stringify(d2Trade, undefined, 2)}
+3 Diamond: ${JSON.stringify(d3Trade, undefined, 2)}
+4 Diamond: ${JSON.stringify(d4Trade, undefined, 2)}
+1 Star: ${JSON.stringify(s1Trade, undefined, 2)}`
+      );
+    }
+
+    function intersect(array1, array2) {
+      if (!array1?.length || !array2?.length) return [];
+      return array1.filter(item => array2.includes(item));
+    }
+
+    async function fetchAndDisplayData() {
+      const collection1 = document.getElementById('collection1').value;
+      const collection2 = document.getElementById('collection2').value;
+
+      try {
+        const genericCardData = await fetchRawCardData();
+        const trader1 = await fetchTradeData(collection1, genericCardData);
+        const trader2 = await fetchTradeData(collection2, genericCardData);
+
+        const result = [];
+        result.push(logAvailableTrades(trader1, trader2));
+        result.push('-----');
+        result.push(logAvailableTrades(trader2, trader1));
+
+        document.getElementById('output').textContent = result.join('\n');
+      } catch (error) {
+        document.getElementById('output').textContent = "Error fetching data. Please check the console for details.";
+      }
+    }
+
+    document.getElementById('refresh').addEventListener('click', fetchAndDisplayData);
+
+    // Initial fetch
+    fetchAndDisplayData();
+  </script>
+</body>
+</html>
