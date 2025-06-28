@@ -8,50 +8,82 @@
     body {
       font-family: Arial, sans-serif;
       margin: 20px;
+      background-color: #181a1b;
+      color: #e8e6e3;
     }
     pre {
-      background-color: #f4f4f4;
+      background-color: #23272a;
       padding: 10px;
-      border: 1px solid #ddd;
+      border: 1px solid #333;
       border-radius: 5px;
       white-space: pre-wrap;
       word-wrap: break-word;
+      color: #e8e6e3;
     }
     button {
       margin-top: 20px;
       padding: 10px 20px;
       font-size: 16px;
       cursor: pointer;
+      background-color: #282c34;
+      color: #e8e6e3;
+      border: 1px solid #444;
+      border-radius: 4px;
+      transition: background 0.2s, color 0.2s;
+    }
+    button:hover {
+      background-color: #3a3f4b;
+      color: #fff;
     }
     input {
       margin: 10px 0;
       padding: 5px;
       font-size: 16px;
       width: 100%;
+      background-color: #23272a;
+      color: #e8e6e3;
+      border: 1px solid #444;
+      border-radius: 4px;
     }
     label {
       font-weight: bold;
+      color: #e8e6e3;
     }
     table {
       table-layout: auto;
       width: 100%;
+      background-color: #23272a;
+      color: #e8e6e3;
+      border-collapse: collapse;
     }
     th, td {
-      border: 1px solid #ddd;
+      border: 1px solid #333;
       padding: 8px;
       text-align: left;
       white-space: nowrap;
     }
     th {
-      background-color: #f2f2f2;
+      background-color: #282c34;
+      color: #e8e6e3;
     }
     th:first-child, td:first-child {
       width: min-content;
       white-space: nowrap;
     }
-
     th:nth-child(2), td:nth-child(2) {
       width: auto;
+    }
+    /* Card image grid background */
+    td[colspan='2'] > div[style*='display:grid'] {
+      background: #181a1b;
+      border-radius: 8px;
+      padding: 10px;
+    }
+    /* Card image border */
+    img {
+      border: 1px solid #444;
+      border-radius: 6px;
+      background: #23272a;
     }
   </style>
 </head>
