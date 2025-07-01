@@ -253,6 +253,7 @@
       const collection1 = document.getElementById('collection1').value;
       const collection2 = document.getElementById('collection2').value;
 
+      document.getElementById('output').innerHTML = "Loading...";
       try {
         const genericCardData = await fetchRawCardData();
         const trader1 = await fetchTradeData(collection1, genericCardData);
